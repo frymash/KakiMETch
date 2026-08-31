@@ -33,13 +33,7 @@ def rank_escorts(
     suggestions: list[EscortSuggestion] = []
 
     for escort in escorts:
-        if escort.get("has_conflict"):
-            continue
-        if not is_available(escort, appt_date, appt_time):
-            continue
-        if client.get("wheelchair_required") and not escort.get(
-            "wheelchair_handling_capable"
-        ):
+        if get_hard_filter_issues(client, appt_date, appt_time, escort):
             continue
 
         score = 0
@@ -78,6 +72,27 @@ def rank_escorts(
         )
 
     return MatchResult(suggestions=suggestions, warning=warning)
+
+
+def get_hard_filter_issues(
+    client: Mapping[str, object],
+    appt_date: date,
+    appt_time: time,
+    escort: Mapping[str, object],
+) -> list[str]:
+    """Return every hard constraint an escort fails for a specific appointment."""
+    issues: list[str] = []
+
+    if escort.get("has_conflict"):
+        issues.append("Escort already has a scheduled trip at this appointment time.")
+    if not is_available(escort, appt_date, appt_time):
+        issues.append("Escort is unavailable at this appointment time.")
+    if client.get("wheelchair_required") and not escort.get(
+        "wheelchair_handling_capable"
+    ):
+        issues.append("Escort cannot provide required wheelchair handling.")
+
+    return issues
 
 
 def get_escort_suggestions(trip_id: UUID, limit: int = 3) -> MatchResult:
