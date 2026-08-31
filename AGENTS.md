@@ -66,13 +66,14 @@ An elderly client's referral should be **rejected** if any of these fail, otherw
   `NMTS effective date` / `NMTS expired date` fields — typically a 3-6 month certified window).
   There's also a soft check that AIC's referral and LH's own internal assessment agree (a
   referred client may have recovered mobility since being referred — this can cause a
-  discrepancy worth flagging).
+  discrepancy worth flagging). Store these separately as `aic_mobility_status` and
+  `lh_mobility_status`; use the LH-assessed value for the hard mobility decision.
 - **Service agreement status**: `LH Service Agreement` / `SW Service Agreement` fields should
-  not be `N` (no valid agreement in place); `Y` or `Pending` can proceed. These fields are
+  both be `Y` or `Pending`; reject the referral if either is `N` or missing. These fields are
   understood to track whether the client has a signed service agreement with Loving Heart
   and/or the referring social worker/agency. **This interpretation is inferred from the field
-  names in the data, not explicitly confirmed by the team** — worth double-checking with
-  whoever owns this field before hardcoding the rejection logic on it.
+  names in the data, not explicitly confirmed by the team** — but both are required for the
+  MVP.
 
 **Not part of assessment** (these are escort-matching inputs, used only after acceptance):
 dialect, gender, weight, wheelchair-handling capability. Keep this boundary clean — assessment
@@ -102,8 +103,10 @@ Algorithm shape (simple, confirmed — not over-engineered):
 2. **Soft scoring/sorting**: among survivors, score by dialect match and gender match (and any
    other soft signals the team adds), then sort and return the top K by score.
 3. **If the hard filter removes everyone (no viable escort), this is a conflict.** Confirmed
-   handling: surface it as a **soft warning**, not a blocking error — the admin can still
-   proceed manually. Longer-term (future feature, not this milestone): allow the admin to
+  handling: surface it as a **soft warning**, not a blocking error — the admin can still
+  proceed manually only by supplying an explicit override flag and reason. Longer-term (future
+  feature, not this milestone): add appointment duration so conflicts can account for overlapping
+  time ranges rather than just an identical appointment time, allow the admin to
    amend an already-booked escort's schedule directly and have the system suggest who else
    could be reallocated to cover the gap. Not building this reallocation feature yet, but keep
    the conflict-detection logic structured so it could support it later without a rewrite.
@@ -176,7 +179,8 @@ if it comes up.
 Three core entities (see `/data` folder for dummy Excel files matching this shape):
 
 **Elderly**
-- id (PK), name, nric (omit from UI — see below), mobility status, wheelchair (Y/N),
+- id (PK), name, nric (omit from UI — see below), AIC-reported mobility status,
+  LH-assessed mobility status, wheelchair (Y/N),
   dialect, weight_kg, gender, destination/address, AIC reg no, NMTS effective/expiry dates,
   service agreement status, escort required (Y/N)
 - `dialect` and `weight_kg` are validated/editable fields in the frontend UI, not read-only —
