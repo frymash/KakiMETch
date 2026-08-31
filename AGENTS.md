@@ -184,8 +184,8 @@ Three core entities (see `/data` folder for dummy Excel files matching this shap
 **Elderly**
 - id (PK), name, nric (omit from UI — see below), AIC-reported mobility status,
   LH-assessed mobility status, wheelchair (Y/N),
-  dialect, weight_kg, gender, destination/address, AIC reg no, NMTS effective/expiry dates,
-  service agreement status, escort required (Y/N)
+  dialect, weight_kg, gender, escort gender preference (if any), destination/address, AIC reg
+  no, NMTS effective/expiry dates, service agreement status, escort required (Y/N)
 - `dialect` and `weight_kg` are validated/editable fields in the frontend UI, not read-only —
   admins can view and correct them, not just have the matching engine consume them silently.
 
