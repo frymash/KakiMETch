@@ -60,7 +60,10 @@ model or services beyond what's needed to hand off cleanly later.
 An elderly client's referral should be **rejected** if any of these fail, otherwise **accepted**:
 
 - **Geographic boundary**: destination/pickup address must be within Loving Heart's service
-  area (Southwest district).
+  area (Southwest district). For the MVP, recognise destination addresses containing Boon Lay,
+  Bukit Batok, Bukit Panjang, Choa Chu Kang, Clementi, Hong Kah, Jurong, Pioneer, Teban,
+  Tengah, Toh Guan, Tuas, West Coast, or Yuhua. Replace this address-based approximation if
+  Loving Heart later supplies an official service-area boundary.
 - **Mobility**: reject if bed-bound. Accept ambulant, wheelchair users, and walking-frame users.
 - **Certification / genuine need**: client must have a valid NMTS-certified window (see
   `NMTS effective date` / `NMTS expired date` fields — typically a 3-6 month certified window).
