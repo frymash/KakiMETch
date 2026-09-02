@@ -14,3 +14,12 @@ def get_database_url() -> str:
         raise RuntimeError("DATABASE_URL is not set. Add it to backend/.env.")
 
     return database_url
+
+
+def get_allowed_origins() -> list[str]:
+    origins = ["http://localhost:3000"]
+    frontend_url = os.getenv("FRONTEND_URL")
+    if frontend_url:
+        origins.append(frontend_url.rstrip("/"))
+
+    return origins
