@@ -11,8 +11,11 @@
 ## API endpoints
 
 - `GET /health`
+- `GET /matching-queue`
+- `PATCH /elderly-clients/{elderly_id}/matching-profile`
 - `POST /trips/{trip_id}/assessment`
 - `GET /trips/{trip_id}/escort-suggestions?limit=3`
+- `GET /trips/{trip_id}/escort-options`
 - `POST /trips/{trip_id}/confirm-escort`
 - `GET /schedule`
 
@@ -22,3 +25,4 @@
 - Re-running the importer updates clients and escorts and avoids creating duplicate trips.
 - The backend connects directly to Supabase Postgres. Do not commit the local `.env` file or database password.
 - Enable Row Level Security and add authenticated-admin policies before connecting direct Supabase browser CRUD in the frontend.
+- For the matching-only demo, run `python -m scripts.prepare_matching_demo` after importing the workbooks to assess pending escort-required trips and populate the matching queue.
