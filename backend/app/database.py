@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, register_uuid
 
 from app.config import get_database_url
 
@@ -14,6 +14,7 @@ def get_connection() -> Iterator[psycopg2.extensions.connection]:
         get_database_url(),
         cursor_factory=RealDictCursor,
     )
+    register_uuid(conn_or_curs=connection)
 
     try:
         yield connection
