@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, model_validator
 
+from app.schemas.matching_workspace import GenderPreference
+
 
 class ConfirmEscortRequest(BaseModel):
     escort_id: UUID
@@ -28,8 +30,19 @@ class TripConfirmation(BaseModel):
 
 class ScheduledTrip(BaseModel):
     trip_id: UUID
+    elderly_id: UUID
     elderly_name: str
+    escort_id: UUID
     escort_name: str
     appt_date: date
     appt_time: time
     destination: str
+    dialect: str | None
+    weight_kg: float | None
+    gender_preference: GenderPreference | None
+    wheelchair_required: bool
+
+
+class TripCancellation(BaseModel):
+    trip_id: UUID
+    status: Literal["accepted"]

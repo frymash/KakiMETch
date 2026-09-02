@@ -42,6 +42,7 @@ import {
   GenderPreference,
   MatchingQueueItem,
   ScheduledTrip,
+  cancelAssignment,
   confirmEscort,
   getEscortOptions,
   getEscortSuggestions,
@@ -53,10 +54,40 @@ import {
 type LoadState = "idle" | "loading" | "success" | "error";
 type WorkspaceView = "unmatched" | "matched";
 
+type CaseTrip = MatchingQueueItem & { escort_id?: string; escort_name?: string };
+
 interface ConfirmationResult {
-  trip: MatchingQueueItem;
+  trip: CaseTrip;
+  escortId: string;
   escortName: string;
   override: boolean;
+}
+
+function toQueueItem(trip: CaseTrip): MatchingQueueItem {
+  const {
+    trip_id,
+    elderly_id,
+    elderly_name,
+    appt_date,
+    appt_time,
+    destination,
+    dialect,
+    weight_kg,
+    gender_preference,
+    wheelchair_required,
+  } = trip;
+  return {
+    trip_id,
+    elderly_id,
+    elderly_name,
+    appt_date,
+    appt_time,
+    destination,
+    dialect,
+    weight_kg,
+    gender_preference,
+    wheelchair_required,
+  };
 }
 
 function formatDate(value: string, includeYear = false) {
@@ -129,7 +160,10 @@ export function MatchingWorkspace() {
     }
   }, []);
 
-  const selectedTrip = queue.find((trip) => trip.trip_id === selectedTripId) ?? null;
+  const selectedTrip: CaseTrip | null =
+    queue.find((trip) => trip.trip_id === selectedTripId) ??
+    scheduledTrips.find((trip) => trip.trip_id === selectedTripId) ??
+    null;
   const activeTrip = selectedTrip ?? confirmation?.trip ?? null;
   const filteredQueue = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
@@ -169,9 +203,16 @@ export function MatchingWorkspace() {
     window.setTimeout(() => openerRef.current?.focus(), 0);
   }, []);
 
-  function updateTrip(updated: MatchingQueueItem) {
+  function updateTrip(updated: CaseTrip) {
     setQueue((current) =>
-      current.map((trip) => (trip.trip_id === updated.trip_id ? updated : trip)),
+      current.map((trip) =>
+        trip.trip_id === updated.trip_id ? toQueueItem(updated) : trip,
+      ),
+    );
+    setScheduledTrips((current) =>
+      current.map((trip) =>
+        trip.trip_id === updated.trip_id ? { ...trip, ...toQueueItem(updated) } : trip,
+      ),
     );
   }
 
@@ -179,17 +220,23 @@ export function MatchingWorkspace() {
     setQueue((current) => current.filter((trip) => trip.trip_id !== result.trip.trip_id));
     setScheduledTrips((current) => [
       {
-        trip_id: result.trip.trip_id,
-        elderly_name: result.trip.elderly_name,
+        ...toQueueItem(result.trip),
+        escort_id: result.escortId,
         escort_name: result.escortName,
-        appt_date: result.trip.appt_date,
-        appt_time: result.trip.appt_time,
-        destination: result.trip.destination,
       },
       ...current.filter((trip) => trip.trip_id !== result.trip.trip_id),
     ]);
     setScheduleState("success");
     setConfirmation(result);
+  }
+
+  function cancelMatch(trip: CaseTrip) {
+    setScheduledTrips((current) => current.filter((item) => item.trip_id !== trip.trip_id));
+    setQueue((current) => [
+      toQueueItem(trip),
+      ...current.filter((item) => item.trip_id !== trip.trip_id),
+    ]);
+    closeDrawer();
   }
 
   return (
@@ -315,12 +362,19 @@ export function MatchingWorkspace() {
           {filteredSchedule.length > 0 && (
             <div className="patient-grid">
               {filteredSchedule.map((trip) => (
-                <article className="existing-module" key={trip.trip_id}>
+                <button
+                  type="button"
+                  className="existing-module patient-module"
+                  key={trip.trip_id}
+                  onClick={() => openTrip(trip.trip_id)}
+                  aria-haspopup="dialog"
+                >
                   <span className="module-topline"><strong>{trip.elderly_name}</strong><span className="quiet-status matched">Matched</span></span>
                   <span className="escort-assignment"><UserRound size={19} aria-hidden="true" /><span><small>Escort</small><strong>{trip.escort_name}</strong></span></span>
                   <span className="module-detail"><CalendarDays size={19} aria-hidden="true" /><span>{formatDate(trip.appt_date, true)} at {formatTime(trip.appt_time)}</span></span>
                   <span className="module-detail"><MapPin size={19} aria-hidden="true" /><span>{trip.destination}</span></span>
-                </article>
+                  <span className="module-open">View matching details <ChevronRight size={19} aria-hidden="true" /></span>
+                </button>
               ))}
             </div>
           )}
@@ -336,6 +390,7 @@ export function MatchingWorkspace() {
             onClose={closeDrawer}
             onUpdate={updateTrip}
             onComplete={completeMatch}
+            onCancel={cancelMatch}
           />
         </>
       )}
@@ -349,12 +404,14 @@ function PatientDrawer({
   onClose,
   onUpdate,
   onComplete,
+  onCancel,
 }: {
-  trip: MatchingQueueItem;
+  trip: CaseTrip;
   confirmation: ConfirmationResult | null;
   onClose: () => void;
-  onUpdate: (trip: MatchingQueueItem) => void;
+  onUpdate: (trip: CaseTrip) => void;
   onComplete: (result: ConfirmationResult) => void;
+  onCancel: (trip: CaseTrip) => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
@@ -403,7 +460,7 @@ function PatientDrawer({
       {confirmation ? (
         <ConfirmationView result={confirmation} onClose={onClose} />
       ) : (
-        <MatchingCase trip={trip} onUpdate={onUpdate} onComplete={onComplete} />
+        <MatchingCase trip={trip} onUpdate={onUpdate} onComplete={onComplete} onCancel={onCancel} />
       )}
     </aside>
   );
@@ -413,10 +470,12 @@ function MatchingCase({
   trip,
   onUpdate,
   onComplete,
+  onCancel,
 }: {
-  trip: MatchingQueueItem;
-  onUpdate: (trip: MatchingQueueItem) => void;
+  trip: CaseTrip;
+  onUpdate: (trip: CaseTrip) => void;
   onComplete: (result: ConfirmationResult) => void;
+  onCancel: (trip: CaseTrip) => void;
 }) {
   const [suggestions, setSuggestions] = useState<EscortSuggestion[]>([]);
   const [warning, setWarning] = useState<string | null>(null);
@@ -434,6 +493,8 @@ function MatchingCase({
   const [selectedOverrideId, setSelectedOverrideId] = useState<string | null>(null);
   const [overrideReason, setOverrideReason] = useState("");
   const [editing, setEditing] = useState(false);
+  const [cancelState, setCancelState] = useState<LoadState>("idle");
+  const [cancelError, setCancelError] = useState("");
   const [profileState, setProfileState] = useState<LoadState>("idle");
   const [profileError, setProfileError] = useState("");
   const [profileNotice, setProfileNotice] = useState("");
@@ -530,7 +591,7 @@ function MatchingCase({
     setConfirmError("");
     try {
       await confirmEscort(trip.trip_id, selected.escort_id);
-      onComplete({ trip, escortName: selected.name, override: false });
+      onComplete({ trip, escortId: selected.escort_id, escortName: selected.name, override: false });
     } catch (error) {
       if (error instanceof ApiError && error.status === 409 && error.issues.length > 0) {
         setLateIssues(error.issues);
@@ -552,10 +613,22 @@ function MatchingCase({
     setConfirmError("");
     try {
       await confirmEscort(trip.trip_id, selected.escort_id, overrideReason.trim());
-      onComplete({ trip, escortName: selected.name, override: true });
+      onComplete({ trip, escortId: selected.escort_id, escortName: selected.name, override: true });
     } catch (error) {
       setConfirmState("error");
       setConfirmError(friendlyError(error));
+    }
+  }
+
+  async function cancelCurrentAssignment() {
+    setCancelState("loading");
+    setCancelError("");
+    try {
+      await cancelAssignment(trip.trip_id);
+      onCancel(trip);
+    } catch (error) {
+      setCancelState("error");
+      setCancelError(friendlyError(error));
     }
   }
 
@@ -605,6 +678,26 @@ function MatchingCase({
         )}
         {profileNotice && <p className="inline-message success" role="status">{profileNotice}</p>}
       </section>
+
+      {trip.escort_id && (
+        <section className="drawer-section" aria-labelledby="assigned-heading">
+          <div className="assigned-card">
+            <span className="escort-assignment">
+              <UserRound size={19} aria-hidden="true" />
+              <span><small>Currently assigned</small><strong id="assigned-heading">{trip.escort_name}</strong></span>
+            </span>
+            {cancelError && <p className="inline-message error" role="alert">{cancelError}</p>}
+            <button
+              type="button"
+              className="secondary-button danger-button"
+              onClick={() => void cancelCurrentAssignment()}
+              disabled={cancelState === "loading"}
+            >
+              {cancelState === "loading" ? "Cancelling…" : "Cancel Assignment"}
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="drawer-section" aria-labelledby="suggestions-heading">
         <div className="section-heading">
