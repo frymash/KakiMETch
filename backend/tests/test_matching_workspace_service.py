@@ -119,6 +119,7 @@ def test_escort_options_explain_every_hard_filter_issue(monkeypatch):
         monkeypatch,
         [
             {
+                "escort_id": None,
                 "appt_date": date(2026, 9, 8),
                 "appt_time": time(10, 0),
                 "status": "accepted",

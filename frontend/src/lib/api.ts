@@ -54,13 +54,14 @@ export interface TripConfirmation {
   assignment_override: boolean;
 }
 
-export interface ScheduledTrip {
+export interface TripCancellation {
   trip_id: string;
-  elderly_name: string;
+  status: "accepted";
+}
+
+export interface ScheduledTrip extends MatchingQueueItem {
+  escort_id: string;
   escort_name: string;
-  appt_date: string;
-  appt_time: string;
-  destination: string;
 }
 
 interface ApiErrorPayload {
@@ -142,4 +143,9 @@ export const confirmEscort = (
       assignment_override: Boolean(overrideReason),
       assignment_override_reason: overrideReason || null,
     }),
+  });
+
+export const cancelAssignment = (tripId: string) =>
+  request<TripCancellation>(`/trips/${tripId}/cancel-assignment`, {
+    method: "POST",
   });

@@ -2,12 +2,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.trip import ConfirmEscortRequest, TripConfirmation
+from app.schemas.trip import ConfirmEscortRequest, TripCancellation, TripConfirmation
 from app.services.scheduling_service import (
     AssignmentOverrideRequiredError,
     ConfirmationNotAllowedError,
     EscortNotFoundError,
     TripNotFoundError,
+    cancel_assignment,
     confirm_escort,
 )
 
@@ -43,4 +44,20 @@ def confirm_escort_endpoint(
                 "message": "This assignment needs an override reason.",
                 "issues": error.issues,
             },
+        ) from error
+
+
+@router.post("/{trip_id}/cancel-assignment", response_model=TripCancellation)
+def cancel_assignment_endpoint(trip_id: UUID) -> TripCancellation:
+    try:
+        return cancel_assignment(trip_id)
+    except TripNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found.",
+        ) from error
+    except ConfirmationNotAllowedError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only scheduled trips can have their assignment cancelled.",
         ) from error

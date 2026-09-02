@@ -254,3 +254,34 @@ confirmed trips (date, elderly client, escort, destination, time) so admins can 
 booked. Without this, the confirm step has no visible result for admins to check against, and
 LH still can't see a consolidated view of what's actually scheduled. This is required frontend
 work for the milestone, not optional polish.
+
+## 13. Vision beyond this milestone
+
+This section captures the founding team's broader product vision, for context — it is **not**
+additional scope for the current milestone. See Section 4 for what's actually in scope now, and
+don't let any of this creep into the current data model or services ahead of time.
+
+KakiMETch's overall goal: eliminate the manual, spreadsheet-and-phone-calls administrative
+burden of matching escorts to elderly patients and scheduling drivers for MET (Medical Escort
+and Transportation) services — by intelligently matching the right escort to each patient
+(availability, location, care needs — see Section 6) and, eventually, optimizing driver
+schedules for timely pickups (see Section 4's driver/vehicle exclusion — still out of scope).
+Success is reduced coordinator time spent on manual scheduling (the >=50% north star from
+Section 2), fewer errors and delays, and ultimately more seniors reliably reaching their medical
+appointments.
+
+**Current phase:** piloting with Loving Heart, running user interviews to understand real
+workflows and refine the matching algorithm (Section 6) against actual operational needs.
+Expect the hard-filter/soft-score rules described in this doc to evolve as that feedback comes
+in — they are a confirmed starting point, not a final spec.
+
+**Planned after this milestone** (not to be built now):
+- Scale beyond Loving Heart to other MET providers, charities, and non-profit organisations
+  across Singapore. Where it's easy to, avoid baking in Loving-Heart-only assumptions beyond
+  what's already flagged as LH-specific (e.g. the Southwest-district geographic boundary in
+  Section 5) — but don't over-engineer for multi-tenancy now; nothing about this milestone
+  requires it.
+- A dashboard for audit and reporting purposes.
+
+The team's stated long-term vision: build a sustainable solution that can grow with rising
+demand for elderly care services in Singapore.

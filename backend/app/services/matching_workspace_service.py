@@ -97,6 +97,7 @@ def get_escort_options(trip_id: UUID) -> list[EscortOption]:
             cursor.execute(
                 """
                 select
+                    trips.escort_id,
                     trips.appt_date,
                     trips.appt_time,
                     trips.status,
@@ -111,7 +112,7 @@ def get_escort_options(trip_id: UUID) -> list[EscortOption]:
             trip = cursor.fetchone()
             if trip is None:
                 raise TripNotFoundError
-            if trip["status"] != "accepted":
+            if trip["status"] not in ("accepted", "scheduled"):
                 raise EscortOptionsNotAllowedError
 
             cursor.execute(
@@ -134,9 +135,16 @@ def get_escort_options(trip_id: UUID) -> list[EscortOption]:
                           and assigned_trips.id <> %s
                     ) as has_conflict
                 from public.escorts as escorts
+                where %s is null or escorts.id <> %s
                 order by escorts.name
                 """,
-                (trip["appt_date"], trip["appt_time"], trip_id),
+                (
+                    trip["appt_date"],
+                    trip["appt_time"],
+                    trip_id,
+                    trip["escort_id"],
+                    trip["escort_id"],
+                ),
             )
             escorts: list[Mapping[str, object]] = cursor.fetchall()
 

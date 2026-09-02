@@ -17,6 +17,7 @@
 - `GET /trips/{trip_id}/escort-suggestions?limit=3`
 - `GET /trips/{trip_id}/escort-options`
 - `POST /trips/{trip_id}/confirm-escort`
+- `POST /trips/{trip_id}/cancel-assignment`
 - `GET /schedule`
 
 ## Important notes

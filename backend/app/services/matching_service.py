@@ -102,6 +102,7 @@ def get_escort_suggestions(trip_id: UUID, limit: int = 3) -> MatchResult:
             cursor.execute(
                 """
                 select
+                    trips.escort_id,
                     trips.appt_date,
                     trips.appt_time,
                     trips.status,
@@ -118,7 +119,7 @@ def get_escort_suggestions(trip_id: UUID, limit: int = 3) -> MatchResult:
             trip = cursor.fetchone()
             if trip is None:
                 raise TripNotFoundError
-            if trip["status"] != "accepted":
+            if trip["status"] not in ("accepted", "scheduled"):
                 raise MatchingNotAllowedError
             if not trip["escort_required"]:
                 return MatchResult(
@@ -143,10 +144,18 @@ def get_escort_suggestions(trip_id: UUID, limit: int = 3) -> MatchResult:
                           and assigned_trips.appt_date = %s
                           and assigned_trips.appt_time = %s
                           and assigned_trips.status = 'scheduled'
+                          and assigned_trips.id <> %s
                     ) as has_conflict
                 from public.escorts as escorts
+                where %s is null or escorts.id <> %s
                 """,
-                (trip["appt_date"], trip["appt_time"]),
+                (
+                    trip["appt_date"],
+                    trip["appt_time"],
+                    trip_id,
+                    trip["escort_id"],
+                    trip["escort_id"],
+                ),
             )
             escorts = cursor.fetchall()
 

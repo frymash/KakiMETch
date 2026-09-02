@@ -680,6 +680,30 @@ input::placeholder {
   color: white;
 }
 
+.assigned-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--teal-soft);
+}
+
+.assigned-card .escort-assignment {
+  margin-bottom: 0;
+}
+
+.danger-button {
+  border: 1px solid var(--error);
+  color: var(--error);
+}
+
+.danger-button:hover:not(:disabled) {
+  border-color: var(--error);
+  background: var(--error-soft);
+  color: var(--error);
+}
+
 .primary-button:disabled,
 .secondary-button:disabled,
 .warning-button:disabled,
