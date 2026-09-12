@@ -90,11 +90,12 @@ const API_BASE_URL = (
 ).replace(/\/$/, "");
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const hasJsonBody = Boolean(init?.body) && !(init?.body instanceof FormData);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     cache: "no-store",
     headers: {
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(hasJsonBody ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
     },
   });
@@ -149,3 +150,93 @@ export const cancelAssignment = (tripId: string) =>
   request<TripCancellation>(`/trips/${tripId}/cancel-assignment`, {
     method: "POST",
   });
+
+export type MobilityStatus =
+  | "ambulant"
+  | "wheelchair_user"
+  | "walking_frame_user"
+  | "bed_bound"
+  | "unknown";
+
+export type ServiceAgreementStatus = "Y" | "N" | "Pending";
+
+export interface PatientSummary {
+  id: string;
+  name: string;
+  nric: string | null;
+  postal_code: string | null;
+  nmtr_percentage: number | null;
+  escort_required: boolean;
+  last_visit: string | null;
+}
+
+export interface PatientDetail {
+  id: string;
+  name: string;
+  nric: string | null;
+  aic_registration_no: string | null;
+  postal_code: string | null;
+  block: string | null;
+  unit: string | null;
+  street_name: string | null;
+  address: string | null;
+  contact_no: string | null;
+  caregiver_name: string | null;
+  escort_required: boolean;
+  co_payment: number | null;
+  date_of_birth: string | null;
+  nmts_effective_date: string | null;
+  nmts_expired_date: string | null;
+  date_of_entry: string | null;
+  action_updated_date: string | null;
+  lh_service_agreement: ServiceAgreementStatus | null;
+  sw_service_agreement: ServiceAgreementStatus | null;
+  wheelchair_required: boolean;
+  walking_frame_required: boolean;
+  caregiver_or_maid_available: boolean | null;
+  gender: "M" | "F" | null;
+  gender_preference: GenderPreference | null;
+  address_source: string | null;
+  dialect: string | null;
+  weight_kg: number | null;
+  nmtr_percentage: number | null;
+  aic_mobility_status: MobilityStatus;
+  lh_mobility_status: MobilityStatus;
+  last_visit: string | null;
+}
+
+export type PatientWrite = Omit<
+  PatientDetail,
+  "id" | "address" | "last_visit"
+>;
+
+export interface ImportSummary {
+  imported_count: number;
+  skipped_count: number;
+}
+
+export const getPatients = () => request<PatientSummary[]>("/registry/patients");
+
+export const getPatient = (patientId: string) =>
+  request<PatientDetail>(`/registry/patients/${patientId}`);
+
+export const createPatient = (patient: PatientWrite) =>
+  request<PatientDetail>("/registry/patients", {
+    method: "POST",
+    body: JSON.stringify(patient),
+  });
+
+export const updatePatient = (patientId: string, patient: PatientWrite) =>
+  request<PatientDetail>(`/registry/patients/${patientId}`, {
+    method: "PUT",
+    body: JSON.stringify(patient),
+  });
+
+export const importPatients = (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return request<ImportSummary>("/registry/import", {
+    method: "POST",
+    body: formData,
+  });
+};

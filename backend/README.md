@@ -19,6 +19,11 @@
 - `POST /trips/{trip_id}/confirm-escort`
 - `POST /trips/{trip_id}/cancel-assignment`
 - `GET /schedule`
+- `GET /registry/patients`
+- `GET /registry/patients/{patient_id}`
+- `POST /registry/patients`
+- `PUT /registry/patients/{patient_id}`
+- `POST /registry/import` (multipart `.xlsx` upload, same 26-column mapping as the demo importer)
 
 ## Important notes
 

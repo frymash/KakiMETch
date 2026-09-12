@@ -31,6 +31,7 @@ create table public.elderly_clients (
     address_source text,
     dialect text,
     weight_kg numeric(5, 2) check (weight_kg is null or weight_kg > 0),
+    nmtr_percentage numeric(5, 4) check (nmtr_percentage is null or (nmtr_percentage >= 0 and nmtr_percentage <= 1)),
     aic_mobility_status text not null default 'unknown'
         check (aic_mobility_status in ('ambulant', 'wheelchair_user', 'walking_frame_user', 'bed_bound', 'unknown')),
     lh_mobility_status text not null default 'unknown'
