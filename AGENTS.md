@@ -128,9 +128,7 @@ escort-matching engine, and don't build the interface that would connect to it y
 
 ## 7. Tech stack (confirmed)
 
-- **Frontend**: Next.js, using the `supabase-js` client for direct CRUD (viewing/editing
-  elderly and escort records) — no custom query logic needed here, so the auto-generated
-  REST API is a good fit.
+- **Frontend**: Next.js
 - **Backend**: **FastAPI (Python)** — confirmed.
 - **Backend data access**: **direct Postgres connection** (e.g. SQLAlchemy or psycopg2), not
   the Supabase client library. Reasoning: the matching engine's core job is exactly the kind
