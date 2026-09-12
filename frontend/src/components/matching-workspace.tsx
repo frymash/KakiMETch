@@ -8,6 +8,7 @@ FIRST VIEWPORT: A quiet header and two-column shelf of patient modules; name, ap
 FORM: Modular case shelf with a wide right-side details drawer; mobile makes the drawer full-screen.
 */
 
+import Link from "next/link";
 import {
   AlertCircle,
   Accessibility,
@@ -245,8 +246,11 @@ export function MatchingWorkspace() {
         <div className="brand-mark" aria-hidden="true">KM</div>
         <div>
           <strong>KakiMETch</strong>
-          <span>Escort matching</span>
         </div>
+        <nav className="header-nav" aria-label="KakiMETch sections">
+          <Link href="/" aria-current="page">Escort matching</Link>
+          <Link href="/registry">Patient registry</Link>
+        </nav>
         <span className="demo-label">Demo workspace</span>
       </header>
 
