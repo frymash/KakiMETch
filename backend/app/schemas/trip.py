@@ -6,6 +6,20 @@ from pydantic import BaseModel, model_validator
 
 from app.schemas.matching_workspace import GenderPreference
 
+class TripCreate(BaseModel):
+    elderly_id: UUID
+    appt_date: date
+    appt_time: time
+    destination: str
+
+
+class TripCreated(BaseModel):
+    trip_id: UUID
+    elderly_id: UUID
+    appt_date: date
+    appt_time: time
+    destination: str
+    status: Literal["pending"]
 
 class ConfirmEscortRequest(BaseModel):
     escort_id: UUID
@@ -46,3 +60,5 @@ class ScheduledTrip(BaseModel):
 class TripCancellation(BaseModel):
     trip_id: UUID
     status: Literal["accepted"]
+
+

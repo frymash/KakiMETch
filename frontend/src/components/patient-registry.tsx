@@ -43,6 +43,10 @@ import {
   getPatients,
   importPatients,
   updatePatient,
+  createAppointment,
+  assessAppointment,
+  type AppointmentCreated,
+  type AssessmentResult,
 } from "@/lib/api";
 
 type LoadState = "idle" | "loading" | "success" | "error";
@@ -275,6 +279,7 @@ function PatientDrawer({
   const [detail, setDetail] = useState<PatientDetail | null>(null);
   const [loadState, setLoadState] = useState<LoadState>(mode.kind === "edit" ? "loading" : "success");
   const [loadError, setLoadError] = useState("");
+  const [appointmentOpen, setAppointmentOpen] = useState(false);
 
   const loadDetail = useCallback((patientId: string) => {
     let cancelled = false;
@@ -339,27 +344,331 @@ function PatientDrawer({
         </button>
       </header>
       {mode.kind === "edit" && loadState === "loading" && (
-        <div className="drawer-content">
-          <div className="skeleton-stack" style={{ padding: 36 }} aria-label="Loading patient details">
-            {[1, 2, 3].map((item) => (
-              <span className="skeleton suggestion-skeleton" key={item} />
-            ))}
+      <div className="drawer-content">
+        <div
+          className="skeleton-stack"
+          style={{ padding: 36 }}
+          aria-label="Loading patient details"
+        >
+          {[1, 2, 3].map((item) => (
+            <span
+              className="skeleton suggestion-skeleton"
+              key={item}
+            />
+          ))}
+        </div>
+      </div>
+    )}
+
+    {mode.kind === "edit" && loadState === "error" && (
+      <div className="drawer-content" style={{ padding: 36 }}>
+        <MessageState
+          kind="error"
+          title="Patient could not load"
+          message={loadError}
+        />
+      </div>
+    )}
+
+    {mode.kind === "add" && (
+      <PatientForm
+        patientId={null}
+        initial={null}
+        onSaved={onSaved}
+      />
+    )}
+
+    {mode.kind === "edit" &&
+      loadState === "success" &&
+      detail && (
+        <>
+          {!appointmentOpen ? (
+            <>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setAppointmentOpen(true)}
+              >
+                <CalendarDays size={18} aria-hidden="true" />
+                Create appointment
+              </button>
+
+              <PatientForm
+                patientId={mode.patientId}
+                initial={detail}
+                onSaved={onSaved}
+              />
+            </>
+          ) : (
+            <CreateAppointmentForm
+              patient={detail}
+              onCancel={() => setAppointmentOpen(false)}
+              onCreated={() => {
+                setAppointmentOpen(false);
+              }}
+            />
+          )}
+        </>
+      )}
+      </aside>
+  );
+}
+function CreateAppointmentForm({
+  patient,
+  onCancel,
+  onCreated,
+}: {
+  patient: PatientDetail;
+  onCancel: () => void;
+  onCreated: (appointment: AppointmentCreated) => void;
+}) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [destination, setDestination] = useState("");
+
+  const [saveState, setSaveState] = useState<LoadState>("idle");
+  const [saveError, setSaveError] = useState("");
+  const [createdAppointment, setCreatedAppointment] = useState<AppointmentCreated | null>(null);
+
+  const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!date) {
+      setSaveError("Appointment date is required.");
+      setSaveState("error");
+      return;
+    }
+
+    if (!time) {
+      setSaveError("Appointment time is required.");
+      setSaveState("error");
+      return;
+    }
+
+    if (!destination.trim()) {
+      setSaveError("Destination is required.");
+      setSaveState("error");
+      return;
+    }
+
+    setSaveState("loading");
+    setSaveError("");
+
+    try {
+      const appointment = await createAppointment({
+        elderly_id: patient.id,
+        appt_date: date,
+        appt_time: time,
+        destination: destination.trim(),
+      });
+
+      setCreatedAppointment(appointment);
+
+      const assessment = await assessAppointment(
+        appointment.trip_id,
+      );
+
+      setAssessmentResult(assessment);
+      setSaveState("success");
+
+    } catch (error) {
+      setSaveState("error");
+      setSaveError(friendlyError(error));
+    }
+  }
+  if (assessmentResult && createdAppointment) {
+    const accepted = assessmentResult.decision === "accepted";
+
+    return (
+      <div className="drawer-content">
+        <section
+          className="drawer-section"
+          aria-live="polite"
+        >
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">
+                Assessment complete
+              </p>
+
+              <h3>
+                {accepted
+                  ? "Appointment accepted"
+                  : "Appointment rejected"}
+              </h3>
+            </div>
+          </div>
+
+          <p>
+            {accepted
+              ? "This appointment is eligible and ready for escort matching."
+              : "This appointment cannot proceed to escort matching."}
+          </p>
+
+          <div style={{ marginTop: 20 }}>
+            <p>
+              <strong>Patient:</strong> {patient.name}
+            </p>
+
+            <p>
+              <strong>Date:</strong> {date}
+            </p>
+
+            <p>
+              <strong>Time:</strong> {time}
+            </p>
+
+            <p>
+              <strong>Destination:</strong> {destination}
+            </p>
+          </div>
+
+          {assessmentResult.reasons.length > 0 && (
+            <div style={{ marginTop: 24 }}>
+              <strong>Reasons</strong>
+
+              <ul>
+                {assessmentResult.reasons.map(
+                  (reason, index) => (
+                    <li key={`${reason}-${index}`}>
+                      {reason}
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
+          )}
+
+          {assessmentResult.warnings.length > 0 && (
+            <div style={{ marginTop: 24 }}>
+              <strong>Warnings</strong>
+
+              <ul>
+                {assessmentResult.warnings.map(
+                  (warning, index) => (
+                    <li key={`${warning}-${index}`}>
+                      {warning}
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
+          )}
+
+          <div
+            className="form-actions"
+            style={{ marginTop: 28 }}
+          >
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() =>
+                onCreated(createdAppointment)
+              }
+            >
+              Done
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+  return (
+    <form
+      className="drawer-content"
+      onSubmit={handleSubmit}
+    >
+      <section
+        className="drawer-section"
+        aria-labelledby="appointment-heading"
+      >
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">New appointment</p>
+            <h3 id="appointment-heading">
+              Appointment details
+            </h3>
           </div>
         </div>
-      )}
-      {mode.kind === "edit" && loadState === "error" && (
-        <div className="drawer-content" style={{ padding: 36 }}>
-          <MessageState kind="error" title="Patient could not load" message={loadError} />
+
+        <p>
+          Create an appointment for <strong>{patient.name}</strong>.
+        </p>
+
+        <div className="registry-form-grid">
+          <label>
+            <span>Appointment date</span>
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            <span>Appointment time</span>
+            <input
+              type="time"
+              value={time}
+              onChange={(event) => setTime(event.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            <span>Destination</span>
+            <input
+              type="text"
+              value={destination}
+              onChange={(event) => setDestination(event.target.value)}
+              placeholder="e.g. Ng Teng Fong General Hospital"
+              required
+            />
+          </label>
         </div>
-      )}
-      {(mode.kind === "add" || (mode.kind === "edit" && loadState === "success")) && (
-        <PatientForm
-          patientId={mode.kind === "edit" ? mode.patientId : null}
-          initial={detail}
-          onSaved={onSaved}
-        />
-      )}
-    </aside>
+      </section>
+
+      <section
+        className="drawer-section"
+        style={{ borderBottom: 0 }}
+      >
+        {saveError && (
+          <p
+            className="inline-message error"
+            role="alert"
+          >
+            {saveError}
+          </p>
+        )}
+
+        <div
+          className="form-actions"
+          style={{ marginTop: saveError ? 16 : 0 }}
+        >
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onCancel}
+            disabled={saveState === "loading"}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            className="primary-button"
+            disabled={saveState === "loading"}
+          >
+            {saveState === "loading"
+              ? "Creating…"
+              : "Create appointment"}
+          </button>
+        </div>
+      </section>
+    </form>
   );
 }
 
