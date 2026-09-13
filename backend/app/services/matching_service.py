@@ -198,3 +198,4 @@ def _as_text_set(value: object) -> set[str]:
 
 def _as_text(value: object) -> str:
     return value.strip() if isinstance(value, str) else ""
+
