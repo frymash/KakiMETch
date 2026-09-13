@@ -59,6 +59,24 @@ export interface TripCancellation {
   status: "accepted";
 }
 
+export interface AppointmentCreate {
+  elderly_id: string;
+  appt_date: string;
+  appt_time: string;
+  destination: string;
+}
+
+export interface AppointmentCreated extends AppointmentCreate {
+  trip_id: string;
+  status: "pending";
+}
+
+export interface AssessmentResult {
+  decision: "accepted" | "rejected";
+  reasons: string[];
+  warnings: string[];
+}
+
 export interface ScheduledTrip extends MatchingQueueItem {
   escort_id: string;
   escort_name: string;
@@ -123,6 +141,7 @@ export const getEscortSuggestions = (tripId: string) =>
 export const getEscortOptions = (tripId: string) =>
   request<EscortOption[]>(`/trips/${tripId}/escort-options`);
 
+
 export const updateMatchingProfile = (
   elderlyId: string,
   update: MatchingProfileUpdate,
@@ -130,6 +149,17 @@ export const updateMatchingProfile = (
   request<MatchingProfile>(`/elderly-clients/${elderlyId}/matching-profile`, {
     method: "PATCH",
     body: JSON.stringify(update),
+  });
+
+export const createAppointment = (appointment: AppointmentCreate) =>
+  request<AppointmentCreated>("/trips", {
+    method: "POST",
+    body: JSON.stringify(appointment),
+  });
+
+export const assessAppointment = (tripId: string) =>
+  request<AssessmentResult>(`/trips/${tripId}/assessment`, {
+    method: "POST",
   });
 
 export const confirmEscort = (
