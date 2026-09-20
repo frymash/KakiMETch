@@ -9,6 +9,7 @@ FORM: Modular case shelf with a wide right-side details drawer; mobile makes the
 */
 
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import {
   AlertCircle,
   Accessibility,
@@ -243,13 +244,12 @@ export function MatchingWorkspace() {
   return (
     <div className="app-shell">
       <header className="product-header">
-        <div className="brand-mark" aria-hidden="true">KM</div>
-        <div>
-          <strong>KakiMETch</strong>
-        </div>
+        <Link href="/" className="header-logo">
+          <Logo />
+        </Link>
         <nav className="header-nav" aria-label="KakiMETch sections">
-          <Link href="/" aria-current="page">Escort matching</Link>
-          <Link href="/registry">Patient registry</Link>
+          <Link href="/app/matching" aria-current="page">Escort matching</Link>
+          <Link href="/app/registry">Patient registry</Link>
         </nav>
         <span className="demo-label">Demo workspace</span>
       </header>

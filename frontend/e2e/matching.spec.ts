@@ -38,7 +38,7 @@ async function mockStandardApi(page: Page) {
 
 test("confirms a suggested escort and removes the patient module", async ({ page }) => {
   await mockStandardApi(page);
-  await page.goto("/");
+  await page.goto("/app/matching");
   await expect(page.getByRole("button", { name: /Mdm Lim Siew Hoon/ })).toBeVisible();
   await page.getByRole("button", { name: /Mdm Lim Siew Hoon/ }).click();
   await expect(page.getByRole("dialog", { name: "Mdm Lim Siew Hoon" })).toBeVisible();
@@ -51,7 +51,7 @@ test("confirms a suggested escort and removes the patient module", async ({ page
 
 test("edits matching details before confirming", async ({ page }) => {
   await mockStandardApi(page);
-  await page.goto("/");
+  await page.goto("/app/matching");
   await page.getByRole("button", { name: /Mdm Lim Siew Hoon/ }).click();
   await page.getByRole("button", { name: "Edit" }).click();
   await page.getByLabel("Dialect").fill("Cantonese");
@@ -63,7 +63,7 @@ test("edits matching details before confirming", async ({ page }) => {
 
 test("reviews existing patient and escort matches in a separate tab", async ({ page }) => {
   await mockStandardApi(page);
-  await page.goto("/");
+  await page.goto("/app/matching");
   await page.getByRole("tab", { name: /Existing matches/ }).click();
   await expect(page.getByRole("heading", { name: "Existing patient–escort matches" })).toBeVisible();
   await expect(page.getByText("Mr Tan Ah Kow")).toBeVisible();
@@ -76,7 +76,7 @@ test("requires a reason for a manual override", async ({ page }) => {
   await page.route("**/trips/trip-1/escort-options", (route) => route.fulfill({ json: [{ escort_id: "escort-2", name: "Siti Aishah", gender: "F", dialects: ["Malay"], available_days: ["Mon"], available_timeslot: "9am–1pm", wheelchair_handling_capable: true, issues: ["Escort is unavailable at this appointment time."] }] }));
   await page.route("**/trips/trip-1/confirm-escort", (route) => route.fulfill({ json: { trip_id: "trip-1", escort_id: "escort-2", status: "scheduled", assignment_override: true } }));
 
-  await page.goto("/");
+  await page.goto("/app/matching");
   await page.getByRole("button", { name: /Mdm Lim Siew Hoon/ }).click();
   await expect(page.getByText("Manual review needed")).toBeVisible();
   await page.getByRole("radio", { name: /Siti Aishah/ }).check();
@@ -91,7 +91,7 @@ test("retries when the patient queue fails", async ({ page }) => {
   const unavailable = (route: Parameters<Parameters<Page["route"]>[1]>[0]) =>
     route.fulfill({ status: 503, json: { detail: "Matching service is temporarily unavailable." } });
   await page.route(queuePattern, unavailable);
-  await page.goto("/");
+  await page.goto("/app/matching");
   await expect(page.getByText("Patients could not load")).toBeVisible();
   await page.unroute(queuePattern, unavailable);
   await page.route(queuePattern, (route) => route.fulfill({ json: [trip] }));
@@ -101,7 +101,7 @@ test("retries when the patient queue fails", async ({ page }) => {
 
 test("can complete the standard flow using only the keyboard", async ({ page }) => {
   await mockStandardApi(page);
-  await page.goto("/");
+  await page.goto("/app/matching");
   await page.getByRole("button", { name: /Mdm Lim Siew Hoon/ }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: "All patients" })).toBeFocused();
@@ -116,7 +116,7 @@ test("captures the patient modules and focused drawer at review widths", async (
   test.skip(testInfo.project.name !== "desktop", "One browser captures all review widths.");
   await mockStandardApi(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/");
+  await page.goto("/app/matching");
   await expect(page.getByRole("button", { name: /Mdm Lim Siew Hoon/ })).toBeVisible();
   await page.screenshot({ path: "output/playwright/screenshots/patient-modules-desktop.png", fullPage: true });
 
@@ -133,7 +133,7 @@ test("captures the patient modules and focused drawer at review widths", async (
 
 test("has no automatically detectable WCAG 2.2 A or AA violations", async ({ page }) => {
   await mockStandardApi(page);
-  await page.goto("/");
+  await page.goto("/app/matching");
   await expect(page.getByRole("button", { name: /Mdm Lim Siew Hoon/ })).toBeVisible();
   const overview = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
   expect(overview.violations).toEqual([]);

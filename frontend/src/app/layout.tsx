@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Escort matching | KakiMETch",
-  description: "Internal escort matching for Loving Heart administrators.",
+  title: "KakiMETch",
+  description: "Escort matching for Loving Heart's medical transport coordinators.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
